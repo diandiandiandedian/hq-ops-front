@@ -1,0 +1,14 @@
+/* 偶数行 */
+.even-row {
+  background-color: #f9f9f9; /* 浅灰色背景 */
+}
+
+/* 奇数行 */
+.odd-row {
+  background-color: #ffffff; /* 白色背景 */
+}
+
+/* 表格操作列样式 */
+.ant-table-tbody > tr > td {
+  text-align: center;
+}

@@ -1,0 +1,36 @@
+# Logs
+*.log
+*.tmp
+
+# Environment files
+.env
+
+# Node.js
+node_modules/
+build/
+.cache/
+coverage/
+
+# Java
+target/
+*.jar
+*.war
+
+# IDE-specific files
+*.iml
+.idea/
+*.vscode/
+*.iws
+*.classpath
+*.project
+.settings/
+
+# OS-specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Backup and temporary files
+*~
+\#*\#
+

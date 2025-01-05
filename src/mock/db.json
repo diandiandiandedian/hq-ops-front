@@ -1,0 +1,49 @@
+{
+  "menuList":[
+    {
+      "title": "爬虫外围",
+      "key": "crawler",
+      "children": [
+        {
+          "title": "关键词",
+          "key": "crawler-keywords"
+        },
+        {
+          "title": "结果过滤",
+          "key": "crawler-filter"
+        },
+        {
+          "title": "黑名单规则",
+          "key": "crawler-blacklist-rule"
+        },
+        {
+          "title": "白名单规则",
+          "key": "crawler-whitelist-rule"
+        },
+        {
+          "title": "黑名单管理",
+          "key": "crawler-blacklist-management"
+        },
+        {
+          "title": "白名单管理",
+          "key": "crawler-whitelist-management"
+        },
+        {
+          "title": "策略配置",
+          "key": "crawler-strategy"
+        }
+      ]
+    },
+    {
+      "title": "对话外围",
+      "key": "conversation",
+      "children": [
+        {
+          "title": "售中订单表",
+          "key": "conversation-order"
+        }
+      ]
+    }
+
+  ]
+}

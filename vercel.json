@@ -1,0 +1,12 @@
+{
+  "builds": [
+    {
+      "src": "hq-ops-react/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "hq-ops-react/dist" }
+    }
+  ],
+  "routes": [
+    { "src": "/hq-ops-react/(.*)", "dest": "/hq-ops-react/index.html" }
+  ]
+}
