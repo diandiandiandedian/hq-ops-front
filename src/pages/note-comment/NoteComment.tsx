@@ -3,7 +3,6 @@ import { Table, Pagination, Button, Popconfirm } from 'antd';
 import {
   queryNotesCommentsByPage,
   removeFilterType,
-  updateRuleDisabledStatus,
 } from '../../api/modules/crawler';
 import { BasePage } from '@/redux/types';
 import { NotesComments } from '../types';
