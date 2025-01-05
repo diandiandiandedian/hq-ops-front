@@ -6,6 +6,8 @@ export interface BlackListRule {
   description?: string; // 描述信息（可选）
   createdAt?: number; // 创建时间，使用 UNIX 时间戳（毫秒）
   type?: number;
+  disabled?: number;
+  rowLoading?: boolean;
 }
 
 export interface Product {

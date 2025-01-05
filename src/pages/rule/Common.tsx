@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Pagination, Button, Popconfirm } from 'antd';
+import { Table, Pagination, Button, Popconfirm, Switch } from 'antd';
 import {
   queryBlacklistRuleByPage,
   addBlacklistRule,
   deleteBlacklistRule,
   updateBlacklistRule,
+  updateRuleDisabledStatus,
 } from '../../api/modules/crawler';
 import { BasePage } from '@/redux/types';
 import { formatTimestamp } from '../../utils/dateUtils';
@@ -20,10 +21,8 @@ const App: React.FC<ComponentProps> = ({ type }) => {
   const [data, setData] = useState<BlackListRule[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-
   const [currentRule, setCurrentRule] = useState<BlackListRule | null>(null); // 当前选中的规则
   const [modalVisible, setModalVisible] = useState(false); // 控制弹窗的显示
-
   const [pagination, setPagination] = useState({
     current: 1,
     size: 10,
@@ -49,6 +48,36 @@ const App: React.FC<ComponentProps> = ({ type }) => {
       });
   };
 
+  const handleDisable = (record: BlackListRule, flag: boolean) => {
+    // 保存当前的 disabled 状态
+    const originalDisabled = record.disabled;
+    record.rowLoading = true;
+
+    // 乐观更新 UI
+    record.disabled = flag ? 1 : 0;
+    setData([...data]); // 强制刷新表格，更新 UI
+
+    // 发送请求
+    updateRuleDisabledStatus({
+      id: record.id,
+      disabled: flag ? 1 : 0,
+    })
+      .then((_) => {
+        fetchData(); // 请求成功后重新获取数据
+      })
+      .catch((err) => {
+        console.error('修改失败:', err);
+
+        // 请求失败时，恢复原始状态
+        record.disabled = originalDisabled;
+        setData([...data]); // 强制刷新表格，恢复 UI 状态
+      })
+      .finally(() => {
+        record.rowLoading = false;
+        setData([...data]); // 更新表格数据，防止 rowLoading 被遗漏
+      });
+  };
+
   const handleTableChange = (page: number, size: number) => {
     setPagination((prev) => ({
       ...prev,
@@ -56,6 +85,7 @@ const App: React.FC<ComponentProps> = ({ type }) => {
       size,
     }));
   };
+
   useEffect(() => {
     fetchData();
   }, [pagination.current, pagination.size]);
@@ -66,26 +96,21 @@ const App: React.FC<ComponentProps> = ({ type }) => {
 
   // 在显示弹窗前执行业务逻辑
   const handleBeforeShowModal = async (rule: BlackListRule | null) => {
-    // 执行一些业务逻辑，如数据获取或表单初始化
     console.log('Before showing modal:', rule);
-    if (rule) {
-      // 例如获取编辑相关数据，或者做一些校验
-      // 可以通过API获取更多数据，设置初始值等
-      // await fetchSomeData(rule.id);
-    }
     setModalVisible(true);
   };
 
   const handleAdd = () => {
     const record = { fieldName: undefined, alias: '', regexPattern: '' };
-    setCurrentRule(record); // 设置当前规则数据，表示是编辑
+    setCurrentRule(record);
     handleBeforeShowModal(record);
   };
+
   const handleEdit = (record: BlackListRule) => {
-    console.log('Edit', record);
-    setCurrentRule(record); // 设置当前规则数据，表示是编辑
+    setCurrentRule(record);
     handleBeforeShowModal(record);
   };
+
   const handleDelete = (record: BlackListRule) => {
     setModalLoading(true);
     deleteBlacklistRule({ id: record.id })
@@ -93,20 +118,15 @@ const App: React.FC<ComponentProps> = ({ type }) => {
         fetchData();
       })
       .catch((err) => {
-        console.error('Delete rror:', err);
+        console.error('Delete error:', err);
       })
       .finally(() => {
-        setModalLoading(true);
+        setModalLoading(false);
       });
   };
 
   const modalHandleOk = (record: BlackListRule) => {
-    let method = null;
-    if (record.id) {
-      method = updateBlacklistRule;
-    } else {
-      method = addBlacklistRule;
-    }
+    let method = record.id ? updateBlacklistRule : addBlacklistRule;
     setModalLoading(true);
     method({
       id: record.id,
@@ -158,6 +178,21 @@ const App: React.FC<ComponentProps> = ({ type }) => {
       align: 'center' as 'center',
       key: 'createdAt',
       render: (text: number) => formatTimestamp(text),
+    },
+    {
+      title: '禁用',
+      dataIndex: 'disabled',
+      align: 'center' as 'center',
+      key: 'disabled',
+      render: (_: any, record: BlackListRule) => (
+        <div>
+          <Switch
+            onChange={(e) => handleDisable(record, e)}
+            checked={record.disabled === 1}
+            loading={record.rowLoading}
+          />
+        </div>
+      ),
     },
     {
       title: '操作',
@@ -237,10 +272,8 @@ const App: React.FC<ComponentProps> = ({ type }) => {
 
       <BlackListModal
         loading={modalLoading}
-        onCancel={() => {
-          setModalVisible(false);
-        }}
-        open={modalVisible} // 控制弹窗的显示
+        onCancel={() => setModalVisible(false)}
+        open={modalVisible}
         onOk={modalHandleOk}
         initialValues={currentRule}
       />

@@ -27,6 +27,11 @@ export const queryRuleList = async <T>(
 ): Promise<T> => {
   return post<T>(`blackListRule/queryRuleList`, param);
 };
+export const updateRuleDisabledStatus = async <T>(
+  param?: Record<string, any>
+): Promise<T> => {
+  return post<T>(`blackListRule/updateRuleDisabledStatus`, param);
+};
 
 //  ----------------- product ---------------------
 export const queryProductListByPage = async <T>(
