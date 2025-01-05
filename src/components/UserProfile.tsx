@@ -38,7 +38,7 @@ const UserProfile: React.FC = () => {
             style={{ cursor: 'pointer' }}
           >
             <Avatar src={user.profilePictureUrl} size={30} />
-            <span className="ms-2">{user.phoneNumber}</span>
+            <span className="ms-2">{user.username}</span>
           </div>
         </Dropdown>
       ) : (

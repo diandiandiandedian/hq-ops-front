@@ -86,6 +86,12 @@ export const queryKeywordsManagementByPage = async <T>(
   return post<T>(`keywordsManagement/queryKeywordsManagementByPage`, param);
 };
 
+export const removeFilterType = async <T>(
+  param: Record<string, any>
+): Promise<T> => {
+  return post<T>(`notesComments/removeFilterType`, param);
+};
+
 export const addNotesComment = async <T>(
   param: Record<string, any>
 ): Promise<T> => {
