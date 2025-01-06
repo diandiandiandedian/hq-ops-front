@@ -28,7 +28,7 @@ import UserProfile from '../components/UserProfile';
 
 const { Header, Sider, Content } = Layout;
 
-const App: React.FC = () => {
+const Home: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
 
@@ -199,4 +199,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+export default Home;
