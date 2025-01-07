@@ -91,3 +91,11 @@ export interface NotesComments {
 
   removeLoading: boolean;
 }
+
+export interface ChatMessage {
+  id: number;
+  chatId: number; // 添加 chatId
+  from: 'user' | 'customer';
+  content: string;
+  time: string;
+}

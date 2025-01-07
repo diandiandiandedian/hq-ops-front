@@ -25,6 +25,7 @@ import OrderPage from './OrderPage';
 import NoteComment from './note-comment/NoteComment';
 import Product from './product/Product';
 import UserProfile from '../components/UserProfile';
+import Chat from './pre-sale-talk/Chat';
 
 const { Header, Sider, Content } = Layout;
 
@@ -114,18 +115,18 @@ const Home: React.FC = () => {
                 },
               ],
             },
-            // {
-            //   key: 'conversation',
-            //   icon: <VideoCameraOutlined />,
-            //   label: '对话外围',
-            //   children: [
-            //     {
-            //       key: 'conversation-order',
-            //       label: '售中订单表',
-            //       icon: <SettingOutlined />,
-            //     },
-            //   ],
-            // },
+            {
+              key: 'yunyingguanli',
+              icon: <FilterOutlined />,
+              label: '运营管理',
+              children: [
+                {
+                  key: 'pre-sale-talk',
+                  label: '售前咨询',
+                  icon: <SettingOutlined />,
+                },
+              ],
+            },
             {
               key: 'system',
               icon: <SettingOutlined />,
@@ -184,6 +185,7 @@ const Home: React.FC = () => {
             <Route path="crawler-white-rule" element={<WhiteRule />} />
             <Route path="conversation-order" element={<OrderPage />} />
             <Route path="system-product" element={<Product />} />
+            <Route path="pre-sale-talk" element={<Chat />} />
             <Route
               path="crawler-wlist-management"
               element={<WhiteListManagement />}
