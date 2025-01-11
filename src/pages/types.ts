@@ -102,7 +102,6 @@ export interface ChatMessage {
 
 export interface Message {
   id: number;
-  title: string;
   message: string;
   userId: number;
   userName: string;

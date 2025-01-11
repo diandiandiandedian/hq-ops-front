@@ -1,10 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer, { initializeAuth } from './modules/authSlice';
-import chatReducer from './modules/socketSlice';
+// import chatReducer from './modules/socketSlice';
 const store = configureStore({
   reducer: {
     auth: authReducer,
-    socket: chatReducer,
+    // socket: chatReducer,
   },
 });
 // 初始化 Redux 状态
