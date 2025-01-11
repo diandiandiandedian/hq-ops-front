@@ -94,8 +94,24 @@ export interface NotesComments {
 
 export interface ChatMessage {
   id: number;
-  chatId: number; // 添加 chatId
+  chatId: number | null; // 添加 chatId
   from: 'user' | 'customer';
   content: string;
   time: string;
+}
+
+export interface Message {
+  id: number;
+  title: string;
+  message: string;
+  userId: number;
+  userName: string;
+  time: string;
+  from: 'user' | 'admin';
+}
+
+export interface UserMessage {
+  userId: number;
+  userName: string;
+  messages: Message[];
 }
