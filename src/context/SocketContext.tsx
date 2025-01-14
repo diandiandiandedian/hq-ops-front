@@ -11,14 +11,16 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { Message, UserMessage } from '../pages/types';
 import { notification } from 'antd';
+import { queryUnreadMessages } from '../api/index';
 // import useMessage from 'antd/es/message/useMessage';
 
 interface SocketContextProps {
   socket: Socket | null;
   userMessages: UserMessage[];
   addMessage: (message: Message) => void;
-  setActiveUserId: (activeUserId: number) => void;
-  activeUserId: number;
+  setActiveUserId: (activeUserId: string) => void;
+  activeUserId: string;
+  setUserMessages: (userMessage: UserMessage[]) => void;
 }
 
 const SocketContext = createContext<SocketContextProps | undefined>(undefined);
@@ -46,18 +48,36 @@ export const SocketProvider: React.FC<{
   const socketRef = useRef<Socket | null>(null);
   const token = useSelector((state: RootState) => state.auth.token);
   const currentRouteKey = location.pathname.split('/')[2];
-  const [activeUserId, setActiveUserId] = useState<number>(1);
+  const [activeUserId, setActiveUserId] = useState<string>('');
 
   const [userMessages, setUserMessages] = useState<UserMessage[]>([
-    { userId: 1, userName: '用户1', messages: [] },
-    { userId: 2, userName: '用户2', messages: [] },
-    { userId: 3, userName: '用户3', messages: [] },
+    // { userId: '1', userName: '用户1', messages: [] },
+    // { userId: '2', userName: '用户2', messages: [] },
+    // { userId: '3', userName: '用户3', messages: [] },
   ]);
+
+  const [userLoading, setUserLoading] = useState<boolean>(false);
+
+  const query = () => {
+    setUserLoading(true);
+    queryUnreadMessages<UserMessage[]>()
+      .then((res) => {
+        setUserMessages(res);
+      })
+      .finally(() => {
+        setUserLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    query();
+  }, []);
+
   useEffect(() => {
     const ss = import.meta.env.VITE_SOCKET_BASE_URL;
     console.log(ss);
     const socketInstance = io(ss, {
-      // transports: ['polling'],
+      transports: ['polling'],
       query: {
         Authorization: `Bearer ${token}`,
       },
@@ -72,14 +92,16 @@ export const SocketProvider: React.FC<{
         userMessage.messages.push(msg);
         setUserMessages(userMessages);
       } else {
+        // TODO
         userMessage = {
           userId: msg.userId,
-          messages: [msg],
           userName: msg.userName,
+          unReadCount: 1,
+          messages: [msg],
         };
         setUserMessages([...userMessages, userMessage]);
       }
-      if (msg.from === 'user') {
+      if (msg.senderType === 0) {
         setNotifyMessage(msg);
       }
     });
@@ -123,7 +145,7 @@ export const SocketProvider: React.FC<{
       notification.info({
         // message: messages[messages.length - 1].title,
         message: '新消息',
-        description: notifyMessage.message,
+        description: notifyMessage.contentValue,
         placement: 'topRight',
       });
     }
@@ -160,6 +182,7 @@ export const SocketProvider: React.FC<{
         userId: msg.userId,
         userName: msg.userName,
         messages: [msg],
+        unReadCount: 1,
       };
       setUserMessages([...userMessages, userMessage]);
     }
@@ -172,6 +195,7 @@ export const SocketProvider: React.FC<{
         addMessage,
         activeUserId,
         setActiveUserId,
+        setUserMessages,
       }}
     >
       {children}
