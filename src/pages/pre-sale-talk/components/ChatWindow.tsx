@@ -18,6 +18,7 @@ const ChatWindow: React.FC = () => {
   const [isFirstPage, setIsFirstPage] = useState<boolean>(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState<boolean>(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const formatTimestamp = (timestamp: number) =>
     dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm');
@@ -30,7 +31,6 @@ const ChatWindow: React.FC = () => {
       }
       const chatContainer = chatEndRef.current?.parentElement;
 
-      // 记录当前滚动高度
       const scrollHeightBefore = chatContainer?.scrollHeight || 0;
 
       setLoading(true);
@@ -44,7 +44,7 @@ const ChatWindow: React.FC = () => {
         setIsFirstPage(res.isFirstPage);
         if (res.records.length !== 0) {
           if (pageNum === 1) {
-            setMessages(res.records.reverse()); // 新消息插入到顶部
+            setMessages(res.records.reverse());
           } else {
             const records: Message[] = res.records.reverse() as Message[];
             // @ts-ignore
@@ -60,7 +60,6 @@ const ChatWindow: React.FC = () => {
           updateMessageRead(unReadId);
         }
 
-        // 等待 DOM 更新后恢复滚动高度
         setTimeout(() => {
           if (chatContainer) {
             const scrollHeightAfter = chatContainer.scrollHeight;
@@ -78,15 +77,15 @@ const ChatWindow: React.FC = () => {
     setIsPreviewVisible(false);
     setPreviewImage(null);
   };
+
   const handleLoadMore = () => {
-    setPage((prevPage) => prevPage + 1); // 增加页码
+    setPage((prevPage) => prevPage + 1);
   };
 
   useEffect(() => {
     if (!activeUserId) {
       return;
     }
-    console.log('page', page);
     fetchMessages(page);
   }, [page]);
 
@@ -95,15 +94,12 @@ const ChatWindow: React.FC = () => {
       return;
     }
     setMessages([]);
-    console.log('activeUserId', activeUserId);
-    setPage(1); // 重置页码
+    setPage(1);
     fetchMessages(1);
   }, [activeUserId]);
 
   useEffect(() => {
     if (messages.length > 0 && chatEndRef.current) {
-      console.log(messages[messages.length - 1]);
-      // debugger;
       if (messages[messages.length - 1].last) {
         chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
       }
@@ -114,29 +110,20 @@ const ChatWindow: React.FC = () => {
     if (index === 0) return true;
     const currentTimestamp = messages[index].timestamp ?? 0;
     const previousTimestamp = messages[index - 1]?.timestamp ?? 0;
-    return currentTimestamp - previousTimestamp > 60; // 超过1分钟显示时间
+    return currentTimestamp - previousTimestamp > 60;
   };
 
   const handleImageClick = (imageUrl: string) => {
-    // 处理图片点击，弹出大图
-    // alert('显示大图：' + imageUrl);
     setPreviewImage(imageUrl);
     setIsPreviewVisible(true);
   };
 
-  const handleVideoClick = (videoElement: HTMLVideoElement) => {
-    if (videoElement.paused) {
-      videoElement.play();
-    } else {
-      videoElement.pause();
-    }
+  const handleVideoClick = (url: string) => {
+    setVideoUrl(url);
   };
 
-  const handleVideoError = (
-    e: React.SyntheticEvent<HTMLVideoElement, Event>
-  ) => {
-    console.error('视频播放错误:', e);
-    // alert('该视频格式不支持播放');
+  const closeVideoModal = () => {
+    setVideoUrl(null);
   };
 
   const MessageItem: React.FC<{ message: Message; showTimestamp: boolean }> = ({
@@ -151,7 +138,9 @@ const ChatWindow: React.FC = () => {
       )}
       <div
         className={`flex ${
-          message.senderType === 1 ? 'justify-end' : 'justify-start'
+          message.senderType === 1 || message.senderType === 2
+            ? 'justify-end'
+            : 'justify-start'
         } mb-3`}
       >
         <Button
@@ -169,7 +158,7 @@ const ChatWindow: React.FC = () => {
         />
         <div
           className={`max-w-xs p-3 rounded-lg shadow-sm ${
-            message.senderType === 1
+            message.senderType === 1 || message.senderType === 2
               ? 'bg-blue-500 text-white'
               : 'bg-gray-300 text-gray-700'
           }`}
@@ -178,38 +167,25 @@ const ChatWindow: React.FC = () => {
             <p className="text-sm">{message.contentValue}</p>
           )}
           {message.contentType === 1 && (
-            <div className="relative">
+            <div className="relative flex justify-center items-center h-48 w-48 bg-gray-200 overflow-hidden">
               <Image
-                width={200}
-                src={'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'} // 图片 URL
+                src={message.contentValue}
                 alt="Message Image"
                 preview={false}
-                onClick={() =>
-                  handleImageClick(
-                    'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'
-                  )
-                }
-                style={{ cursor: 'pointer' }}
-              />
-              {/* <img
-                src={'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'}
-                alt="Image"
-                className="max-w-full h-auto rounded-lg shadow-sm cursor-pointer"
                 onClick={() => handleImageClick(message.contentValue)}
-              /> */}
+                className="cursor-pointer object-contain max-w-full max-h-full"
+                loading="lazy"
+              />
             </div>
           )}
           {message.contentType === 2 && (
             <div className="relative">
-              <video
-                src={
-                  'https://sample-videos.com/video321/mp4/480/big_buck_bunny_480p_5mb.mp4'
-                }
-                controls
-                className="max-w-full h-auto rounded-lg shadow-sm cursor-pointer"
-                onClick={(e) => handleVideoClick(e.target as HTMLVideoElement)}
-                onError={handleVideoError}
-              />
+              <div
+                className="h-48 w-48 bg-gray-300 flex items-center justify-center cursor-pointer"
+                onClick={() => handleVideoClick(message.contentValue)}
+              >
+                <span className="text-gray-600">点击播放视频</span>
+              </div>
             </div>
           )}
         </div>
@@ -257,6 +233,23 @@ const ChatWindow: React.FC = () => {
         centered
       >
         <img alt="Preview" style={{ width: '100%' }} src={previewImage || ''} />
+      </Modal>
+
+      <Modal
+        open={!!videoUrl}
+        footer={null}
+        onCancel={closeVideoModal}
+        centered
+        width={800}
+      >
+        {videoUrl && (
+          <video
+            src={videoUrl}
+            controls
+            autoPlay
+            style={{ width: '100%', borderRadius: '8px' }}
+          />
+        )}
       </Modal>
     </div>
   );
