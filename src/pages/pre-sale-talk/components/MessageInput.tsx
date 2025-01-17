@@ -72,6 +72,9 @@ const MessageInput: React.FC = () => {
     ) as HTMLInputElement;
     inputElement?.click();
   };
+  if (!activeUserId) {
+    return <div></div>;
+  }
 
   return (
     <div className="p-4 bg-white border-t border-gray-300 shadow-md">
