@@ -5,11 +5,13 @@ import { Badge } from 'antd'; // 引入 Ant Design 的 Badge 组件
 import { UserMessage } from '@/pages/types';
 
 const ChatSidebar: React.FC = () => {
-  const { activeUserId, userMessages, setActiveUserId } = useSocket();
+  const { activeUserId, userMessages, setActiveUserId, setActiveUserName } =
+    useSocket();
 
   // 处理点击聊天项事件
-  const handleChatClick = (id: string) => {
-    setActiveUserId(id);
+  const handleChatClick = (userId: string, userName: string) => {
+    setActiveUserId(userId);
+    setActiveUserName(userName);
   };
 
   return (
@@ -23,7 +25,7 @@ const ChatSidebar: React.FC = () => {
                 ? 'bg-blue-100 text-blue-600 font-semibold shadow-md'
                 : 'hover:bg-gray-100 hover:text-gray-700'
             } rounded-lg`}
-            onClick={() => handleChatClick(item.userId)}
+            onClick={() => handleChatClick(item.userId, item.userName)}
           >
             <Badge
               count={item.unReadCount}

@@ -1,41 +1,30 @@
 import React, { useState } from 'react';
 import { Message } from '../../../pages/types';
 import { useSocket } from '../../../context/SocketContext';
-
+import { sendMessage } from '../../../api/index';
+import { uploadChatFile } from '../../../api/index';
+import { v4 as uuidv4 } from 'uuid';
 const MessageInput: React.FC = () => {
   const [input, setInput] = useState('');
-  const { activeUserId, addMessage } = useSocket();
+  const { activeUserId, addMessage, activeUserName } = useSocket();
 
   const handleSend = () => {
-    if (!input.trim()) return;
-
+    const value = input.trim();
+    if (!value) return;
+    const uuid = uuidv4();
     // 创建新的消息对象
-    // const message: Message = {
-    //   id: Date.now(),
-    //   userId: activeUserId,
-    //   from: 'admin',
-    //   userName: '',
-    //   message: input,
-    //   time: new Date().toLocaleTimeString(),
-    // };
+    const message: Message = {
+      userId: activeUserId,
+      userName: activeUserName,
+      contentType: 0,
+      contentValue: value,
+      senderType: 1,
+      sendStatus: 0,
+      requestId: uuid,
+      last: true,
+    };
+    addMessage(message);
 
-    // addMessage(message);
-
-    // id: number; // 主键ID
-    // taskId: string; // 任务ID
-    // userId: string; // 用户ID
-    // userName: string; // 用户名
-    // contentType: number; // 消息类型 (0 = 文本，1 = 图片，2 = 视频)
-    // contentValue: string; // 消息内容
-    // timestamp: number; // 时间戳
-    // status: number; // 消息状态 (0 = 待处理，1 = 成功，2 = 失败)
-    // operatorId: number; // 操作员ID
-    // senderType: number; // 发送者类型 (0 = 第三方用户，1 = B 端管理员，2 = 系统消息)
-    // isRead: number; // 是否已读 (1 = 未读，0 = 已读)
-    // createdAt: number; // 创建时间
-    // updatedAt: number; // 更新时间
-
-    // last: boolean; // 用于判断是否显示到最后
     setInput('');
   };
 

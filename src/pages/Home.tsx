@@ -25,6 +25,7 @@ import BlackRule from './rule/BlackRule';
 import WhiteRule from './rule/WhiteRule';
 import BlackListManagement from './note-comment/BlackListManagement';
 import WhiteListManagement from './note-comment/WhiteListManagement';
+import ScriptTemplate from './script-template/ScriptTemplate';
 import OrderPage from './OrderPage';
 import NoteComment from './note-comment/NoteComment';
 import Product from './product/Product';
@@ -32,7 +33,8 @@ import UserProfile from '../components/UserProfile';
 import Chat from './pre-sale-talk/Chat';
 // import useSocket from '../hooks/useSocket';
 import { SocketProvider } from '../context/SocketContext';
-
+import { redmatrixUserLogin } from '../api/index';
+import { REDMATRIX_TOKEN } from '../constants/storage';
 const { Header, Sider, Content } = Layout;
 
 const Home: React.FC = () => {
@@ -45,6 +47,21 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentRouteKey = location.pathname.split('/')[2];
+
+  useEffect(() => {
+    getRedmatrixToken();
+  }, []);
+
+  const getRedmatrixToken = () => {
+    redmatrixUserLogin<any>({ account: 'ops', password: 'ops123' })
+      .then((res) => {
+        localStorage.setItem(REDMATRIX_TOKEN, res.userinfo.token);
+      })
+      .catch((e) => {
+        console.log('第三方登录失败', e);
+      })
+      .finally(() => {});
+  };
 
   // const [lastMessage, setLastMessage] = useState<string>();
 
@@ -165,6 +182,11 @@ const Home: React.FC = () => {
                   label: '推销商品管理',
                   icon: <BarsOutlined />,
                 },
+                {
+                  key: 'script-template',
+                  label: '招呼话术管理',
+                  icon: <BarsOutlined />,
+                },
               ],
             },
           ]}
@@ -223,6 +245,7 @@ const Home: React.FC = () => {
                 path="crawler-blist-management"
                 element={<BlackListManagement />}
               />
+              <Route path="script-template" element={<ScriptTemplate />} />
             </Routes>
           </Content>
         </SocketProvider>

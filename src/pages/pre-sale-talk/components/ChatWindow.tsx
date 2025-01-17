@@ -4,16 +4,21 @@ import { Message } from '@/pages/types';
 import { queryMessageListByPage } from '../../../api/index';
 import { BasePage } from '@/redux/types';
 import dayjs from 'dayjs';
+import { Button, Image, Modal } from 'antd';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 const ChatWindow: React.FC = () => {
-  const { activeUserId } = useSocket();
+  const { activeUserId, messages, setMessages, addMessage, updateMessageRead } =
+    useSocket();
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isFirstPage, setIsFirstPage] = useState<boolean>(true);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState<boolean>(false);
+
   const formatTimestamp = (timestamp: number) =>
     dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm');
 
@@ -38,10 +43,21 @@ const ChatWindow: React.FC = () => {
         setHasMore(!res.isLastPage);
         setIsFirstPage(res.isFirstPage);
         if (res.records.length !== 0) {
-          setMessages((prevMessages) => [
-            ...res.records.reverse(), // 新消息插入到顶部
-            ...prevMessages,
-          ]);
+          if (pageNum === 1) {
+            setMessages(res.records.reverse()); // 新消息插入到顶部
+          } else {
+            const records: Message[] = res.records.reverse() as Message[];
+            // @ts-ignore
+            setMessages((prevMessages: Message[]) => [
+              ...records,
+              ...prevMessages,
+            ]);
+          }
+          const unReadId = res.records
+            .filter((item) => item.isRead === 1)
+            .map((item) => item.id)
+            .join();
+          updateMessageRead(unReadId);
         }
 
         // 等待 DOM 更新后恢复滚动高度
@@ -58,6 +74,10 @@ const ChatWindow: React.FC = () => {
     [activeUserId]
   );
 
+  const closePreview = () => {
+    setIsPreviewVisible(false);
+    setPreviewImage(null);
+  };
   const handleLoadMore = () => {
     setPage((prevPage) => prevPage + 1); // 增加页码
   };
@@ -74,6 +94,7 @@ const ChatWindow: React.FC = () => {
     if (!activeUserId) {
       return;
     }
+    setMessages([]);
     console.log('activeUserId', activeUserId);
     setPage(1); // 重置页码
     fetchMessages(1);
@@ -81,6 +102,8 @@ const ChatWindow: React.FC = () => {
 
   useEffect(() => {
     if (messages.length > 0 && chatEndRef.current) {
+      console.log(messages[messages.length - 1]);
+      // debugger;
       if (messages[messages.length - 1].last) {
         chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
       }
@@ -89,10 +112,31 @@ const ChatWindow: React.FC = () => {
 
   const shouldShowTimestamp = (index: number) => {
     if (index === 0) return true;
-    const currentTimestamp = messages[index].timestamp;
-    const previousTimestamp = messages[index - 1]?.timestamp;
-    // return currentTimestamp - previousTimestamp > 300; // 超过5分钟显示时间
-    return currentTimestamp - previousTimestamp > 60; // 超过5分钟显示时间
+    const currentTimestamp = messages[index].timestamp ?? 0;
+    const previousTimestamp = messages[index - 1]?.timestamp ?? 0;
+    return currentTimestamp - previousTimestamp > 60; // 超过1分钟显示时间
+  };
+
+  const handleImageClick = (imageUrl: string) => {
+    // 处理图片点击，弹出大图
+    // alert('显示大图：' + imageUrl);
+    setPreviewImage(imageUrl);
+    setIsPreviewVisible(true);
+  };
+
+  const handleVideoClick = (videoElement: HTMLVideoElement) => {
+    if (videoElement.paused) {
+      videoElement.play();
+    } else {
+      videoElement.pause();
+    }
+  };
+
+  const handleVideoError = (
+    e: React.SyntheticEvent<HTMLVideoElement, Event>
+  ) => {
+    console.error('视频播放错误:', e);
+    // alert('该视频格式不支持播放');
   };
 
   const MessageItem: React.FC<{ message: Message; showTimestamp: boolean }> = ({
@@ -102,7 +146,7 @@ const ChatWindow: React.FC = () => {
     <>
       {showTimestamp && (
         <div className="text-center text-xs text-gray-500 my-2">
-          {formatTimestamp(message.timestamp)}
+          {message.timestamp ? formatTimestamp(message.timestamp) : ''}
         </div>
       )}
       <div
@@ -110,6 +154,19 @@ const ChatWindow: React.FC = () => {
           message.senderType === 1 ? 'justify-end' : 'justify-start'
         } mb-3`}
       >
+        <Button
+          type="link"
+          onClick={() => {
+            addMessage(message);
+          }}
+          icon={
+            message.sendStatus === 2 ? (
+              <ExclamationCircleOutlined style={{ color: 'red' }} />
+            ) : null
+          }
+          className="self-center mr-5"
+          loading={message.sendStatus === 0}
+        />
         <div
           className={`max-w-xs p-3 rounded-lg shadow-sm ${
             message.senderType === 1
@@ -117,19 +174,52 @@ const ChatWindow: React.FC = () => {
               : 'bg-gray-300 text-gray-700'
           }`}
         >
-          <p className="text-sm">{message.contentValue}</p>
+          {message.contentType === 0 && (
+            <p className="text-sm">{message.contentValue}</p>
+          )}
+          {message.contentType === 1 && (
+            <div className="relative">
+              <Image
+                width={200}
+                src={'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'} // 图片 URL
+                alt="Message Image"
+                preview={false}
+                onClick={() =>
+                  handleImageClick(
+                    'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'
+                  )
+                }
+                style={{ cursor: 'pointer' }}
+              />
+              {/* <img
+                src={'https://x.love121314.com/img/logo_left_bg.900bd26f.jpg'}
+                alt="Image"
+                className="max-w-full h-auto rounded-lg shadow-sm cursor-pointer"
+                onClick={() => handleImageClick(message.contentValue)}
+              /> */}
+            </div>
+          )}
+          {message.contentType === 2 && (
+            <div className="relative">
+              <video
+                src={
+                  'https://sample-videos.com/video321/mp4/480/big_buck_bunny_480p_5mb.mp4'
+                }
+                controls
+                className="max-w-full h-auto rounded-lg shadow-sm cursor-pointer"
+                onClick={(e) => handleVideoClick(e.target as HTMLVideoElement)}
+                onError={handleVideoError}
+              />
+            </div>
+          )}
         </div>
-        {/* <span className="text-xs text-gray-400 ml-2 self-end">
-          {dayjs.unix(message.timestamp).format('HH:mm')}
-        </span> */}
       </div>
     </>
   );
 
   return (
     <div className="flex-grow p-4 bg-gray-100 overflow-y-auto rounded-lg shadow-lg">
-      {/* {hasMore && (page > 1 || loading) && ( */}
-      {hasMore && (
+      {hasMore && activeUserId && (
         <button
           onClick={handleLoadMore}
           disabled={loading}
@@ -145,21 +235,29 @@ const ChatWindow: React.FC = () => {
         </div>
       )}
 
-      {messages.length === 0 && !loading && (
+      {messages.length === 0 && activeUserId && !loading && (
         <div className="text-center text-gray-500 text-sm mt-4">
           暂无消息，请开始聊天。
         </div>
       )}
-      {/* <div className="flex flexc flex-col-reverse"> */}
+
       {messages.map((message, index) => (
         <MessageItem
-          key={message.id}
+          key={message.id || message.requestId}
           message={message}
           showTimestamp={shouldShowTimestamp(index)}
         />
       ))}
-      {/* </div> */}
-      <div ref={chatEndRef} />
+      <div className="h-1" ref={chatEndRef} />
+
+      <Modal
+        open={isPreviewVisible}
+        footer={null}
+        onCancel={closePreview}
+        centered
+      >
+        <img alt="Preview" style={{ width: '100%' }} src={previewImage || ''} />
+      </Modal>
     </div>
   );
 };

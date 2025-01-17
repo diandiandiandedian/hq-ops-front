@@ -101,35 +101,30 @@ export interface NotesComments {
 // }
 
 export interface Message {
-  // id: number;
-  // message: string;
-  // userId: string;
-  // userName: string;
-  // time: string;
-  // from: 'user' | 'admin';
-
-  id: number; // 主键ID
-  taskId: string; // 任务ID
+  id?: number; // 主键ID
+  // taskId: string; // 任务ID
   userId: string; // 用户ID
   userName: string; // 用户名
   contentType: number; // 消息类型 (0 = 文本，1 = 图片，2 = 视频)
   contentValue: string; // 消息内容
-  timestamp: number; // 时间戳
-  status: number; // 消息状态 (0 = 待处理，1 = 成功，2 = 失败)
-  operatorId: number; // 操作员ID
+  timestamp?: number; // 时间戳
+  // status: number; // 消息状态 (0 = 待处理，1 = 成功，2 = 失败)
+  // operatorId: number; // 操作员ID
   senderType: number; // 发送者类型 (0 = 第三方用户，1 = B 端管理员，2 = 系统消息)
-  isRead: number; // 是否已读 (1 = 未读，0 = 已读)
-  createdAt: number; // 创建时间
-  updatedAt: number; // 更新时间
+  isRead?: number; // 是否已读 (1 = 未读，0 = 已读)
+  // createdAt: number; // 创建时间
+  // updatedAt: number; // 更新时间
 
-  last: boolean; // 用于判断是否显示到最后
+  last?: boolean; // 用于判断是否显示到最后
+  sendStatus?: number; // 0发送中 1 发送成功 2 发送失败
+  requestId?: string;
 }
 
 export interface UserMessage {
   userId: string;
   userName: string;
   unReadCount: number;
-  messages: Message[];
+  // messages: Message[];
 }
 
 // export interface UserItem {
@@ -155,3 +150,15 @@ export interface UserMessage {
 //   createdAt: number; // 创建时间
 //   updatedAt: number; // 更新时间
 // }
+
+// src/pages/types.ts
+export interface ScriptTemplate {
+  id?: number; // 主键, 新增时为可选
+  keyType?: string; // 招呼话术类型
+  content: string; // 招呼话术内容
+  isDel: number; // 是否删除（0：未删除，其他：已删除）
+  isDisabled: number; // 是否禁用（0：启用，1：禁用）
+  createdAt?: number; // 创建时间
+  updatedAt?: number; // 更新时间
+  rowLoading?: boolean;
+}

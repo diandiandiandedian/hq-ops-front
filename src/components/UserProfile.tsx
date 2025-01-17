@@ -33,11 +33,13 @@ const UserProfile: React.FC = () => {
     <div className="d-flex justify-content-end align-items-center">
       {user ? (
         <Dropdown menu={{ items: menuItems }} trigger={['click']}>
-          <div
-            className="d-flex align-items-center"
-            style={{ cursor: 'pointer' }}
-          >
-            <Avatar src={user.profilePictureUrl} size={30} />
+          <div className="flex items-center" style={{ cursor: 'pointer' }}>
+            {/* <Avatar src={user.profilePictureUrl} size={30} /> */}
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <span className="text-white text-lg">
+                {user.username.charAt(0)}
+              </span>
+            </div>
             <span className="ms-2">{user.username}</span>
           </div>
         </Dropdown>

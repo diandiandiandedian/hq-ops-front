@@ -4,8 +4,6 @@ import { useSocket } from '../../../context/SocketContext';
 const ChatHeader: React.FC = () => {
   const { userMessages, activeUserId } = useSocket();
   const activeUser = userMessages.find((item) => item.userId === activeUserId);
-  console.log('activeUser', activeUser);
-  console.log('userMessages', userMessages);
   return (
     <div className="p-4 bg-white border-b border-gray-300 shadow-sm">
       <h1 className="text-xl font-semibold text-gray-800 truncate">

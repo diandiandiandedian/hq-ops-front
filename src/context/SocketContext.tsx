@@ -11,8 +11,11 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { Message, UserMessage } from '../pages/types';
 import { notification } from 'antd';
-import { queryUnreadMessages } from '../api/index';
-// import useMessage from 'antd/es/message/useMessage';
+import {
+  queryUnreadMessages,
+  sendMessage,
+  updateMessageIsRead,
+} from '../api/index';
 
 interface SocketContextProps {
   socket: Socket | null;
@@ -21,6 +24,12 @@ interface SocketContextProps {
   setActiveUserId: (activeUserId: string) => void;
   activeUserId: string;
   setUserMessages: (userMessage: UserMessage[]) => void;
+  messages: Message[];
+  setMessages: (messages: Message[]) => void;
+  activeUserName: string;
+  setActiveUserName: (activeUserName: string) => void;
+  // queryLeftUserList: () => void;
+  updateMessageRead: (ids: string) => void;
 }
 
 const SocketContext = createContext<SocketContextProps | undefined>(undefined);
@@ -49,35 +58,38 @@ export const SocketProvider: React.FC<{
   const token = useSelector((state: RootState) => state.auth.token);
   const currentRouteKey = location.pathname.split('/')[2];
   const [activeUserId, setActiveUserId] = useState<string>('');
+  const [activeUserName, setActiveUserName] = useState<string>('');
+  const [userMessages, setUserMessages] = useState<UserMessage[]>([]);
 
-  const [userMessages, setUserMessages] = useState<UserMessage[]>([
-    // { userId: '1', userName: '用户1', messages: [] },
-    // { userId: '2', userName: '用户2', messages: [] },
-    // { userId: '3', userName: '用户3', messages: [] },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  const [userLoading, setUserLoading] = useState<boolean>(false);
+  const updateMessageRead = (ids: string) => {
+    updateMessageIsRead({ ids }).then(() => {
+      queryLeftUserList();
+      console.log('修改状态成功');
+    });
+  };
 
-  const query = () => {
-    setUserLoading(true);
+  const queryLeftUserList = () => {
     queryUnreadMessages<UserMessage[]>()
       .then((res) => {
         setUserMessages(res);
       })
-      .finally(() => {
-        setUserLoading(false);
-      });
+      .finally(() => {});
   };
 
   useEffect(() => {
-    query();
+    queryLeftUserList();
   }, []);
+  useEffect(() => {
+    console.log('messages', messages);
+  }, [messages]);
 
   useEffect(() => {
     const ss = import.meta.env.VITE_SOCKET_BASE_URL;
     console.log(ss);
     const socketInstance = io(ss, {
-      transports: ['polling'],
+      // transports: ['polling'],
       query: {
         Authorization: `Bearer ${token}`,
       },
@@ -86,23 +98,22 @@ export const SocketProvider: React.FC<{
     setSocket(socketInstance);
 
     socketInstance.on('message', (msg: Message) => {
+      msg.last = true;
+      console.log('messages', messages);
       console.log(msg);
-      let userMessage = userMessages.find((item) => item.userId === msg.userId);
-      if (userMessage) {
-        userMessage.messages.push(msg);
-        setUserMessages(userMessages);
-      } else {
-        // TODO
-        userMessage = {
-          userId: msg.userId,
-          userName: msg.userName,
-          unReadCount: 1,
-          messages: [msg],
-        };
-        setUserMessages([...userMessages, userMessage]);
-      }
+
+      setMessages((prevMessages) => {
+        // 检查是否是当前用户的消息
+        if (prevMessages.length > 0 && prevMessages[0].userId === msg.userId) {
+          return [...prevMessages, msg];
+        }
+        // 处理其他逻辑
+        return prevMessages;
+      });
+
       if (msg.senderType === 0) {
         setNotifyMessage(msg);
+      } else {
       }
     });
 
@@ -141,52 +152,57 @@ export const SocketProvider: React.FC<{
   }, [token]);
 
   useEffect(() => {
-    if (notifyMessage && currentRouteKey !== 'pre-sale-talk') {
+    if (
+      notifyMessage &&
+      (currentRouteKey !== 'pre-sale-talk' ||
+        notifyMessage.userId !== activeUserId)
+    ) {
+      let description = notifyMessage.contentValue;
+      if (notifyMessage.contentType === 1) {
+        description = '[图片]';
+      }
+      if (notifyMessage.contentType === 2) {
+        description = '[视频]';
+      }
+      queryLeftUserList();
       notification.info({
-        // message: messages[messages.length - 1].title,
-        message: '新消息',
-        description: notifyMessage.contentValue,
+        message: notifyMessage.userName || '新消息',
+        description: description,
         placement: 'topRight',
       });
+    } else {
+      if (notifyMessage) {
+        updateMessageRead(notifyMessage?.id + '');
+      }
     }
   }, [notifyMessage]);
 
-  // const handleSetCurrentUser = (user: string) => {
-  // setCurrentUser(user);
-  // 在这里可以添加逻辑来获取该用户的聊天记录
-  // fetchChatHistory(user);
-  // };
-
-  // const fetchChatHistory = async (user: string) => {
-  //   try {
-  //     // 假设有一个 API 获取用户聊天记录
-  //     const chatHistory = await fetch(`/api/chat-history/${user}`).then((res) =>
-  //       res.json()
-  //     );
-  //     setMessages(chatHistory);
-  //   } catch (error) {
-  //     console.error('Error fetching chat history:', error);
-  //   }
-  // };
-
-  const addMessage = (msg: Message) => {
-    let userMessage = userMessages.find((item) => item.userId === msg.userId);
-    if (userMessage) {
-      socket?.emit('message', JSON.stringify(msg), (res: any) => {
-        console.log('socket-res', res);
-        userMessage?.messages.push(msg);
-        setUserMessages([...userMessages]);
-      });
+  const addMessage = (message: Message) => {
+    const again = messages.includes(message);
+    if (again) {
+      message.sendStatus = 0;
+      setMessages([...messages]);
     } else {
-      userMessage = {
-        userId: msg.userId,
-        userName: msg.userName,
-        messages: [msg],
-        unReadCount: 1,
-      };
-      setUserMessages([...userMessages, userMessage]);
+      setMessages([...messages, message]);
     }
+
+    sendMessage(message)
+      .then((res) => {
+        message.sendStatus = 1;
+      })
+      .catch((e) => {
+        message.sendStatus = 2;
+      })
+      .finally(() => {
+        message.last = false;
+        if (!again) {
+          setMessages([...messages, message]);
+        } else {
+          setMessages([...messages]);
+        }
+      });
   };
+
   return (
     <SocketContext.Provider
       value={{
@@ -196,6 +212,12 @@ export const SocketProvider: React.FC<{
         activeUserId,
         setActiveUserId,
         setUserMessages,
+        messages,
+        setMessages,
+        activeUserName,
+        setActiveUserName,
+        // queryLeftUserList,
+        updateMessageRead,
       }}
     >
       {children}
